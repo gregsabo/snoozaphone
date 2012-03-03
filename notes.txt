@@ -1,0 +1,19 @@
+Main Components:
+
+Web Frontend:
+    static assets
+
+API:
+    /user/login
+    /lullaby
+    /shuttle
+    /alarm
+    /poll
+
+(static page)
+DONE "HELLO WORLD" in html
+DONE login
+dummy get songs call
+rdio oauth
+get songs for user
+playback
