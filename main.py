@@ -7,8 +7,12 @@ import tornado.ioloop
 import tornado.web
 import tornado.auth
 
+from rdio import Rdio
+
 kt = KyotoTycoon()
 kt.open(host='localhost', port=1978)
+config_dict = json.load(open("snoozaphone.json", "r"))
+rdio = Rdio((str(config_dict["RDIO_CONSUMER_KEY"]), str(config_dict["RDIO_CONSUMER_SECRET"])))
 
 class SnoozeAuthHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -40,7 +44,12 @@ class GetSongsHandler(SnoozeAuthHandler):
     @tornado.web.authenticated
     def get(self):
         pl = playlist.static(type='artist-radio', artist='Madonna', buckets=['id:rdio-us-streaming'], limit=True)
-        self.write(json.dumps([s.title for s in pl]))
+        self.write(json.dumps([s.get_foreign_id('rdio-us-streaming') for s in pl]))
+
+class GetRdioPlaybackToken(SnoozeAuthHandler):
+    @tornado.web.authenticated
+    def get(self):
+        self.write(json.dumps(rdio.call('getPlaybackToken', {'domain':'localhost'})))
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -48,6 +57,7 @@ class Application(tornado.web.Application):
             (r"/", MainHandler),
             (r"/login", GoogleHandler),
             (r"/api/get_songs", GetSongsHandler),
+            (r"/api/get_rdio_playback_token", GetRdioPlaybackToken),
         ]
 
         settings = {
