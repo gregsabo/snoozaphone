@@ -9,7 +9,13 @@ import tornado.ioloop
 import tornado.web
 import tornado.auth
 
+import pymc
+
 from rdio import Rdio
+
+mc = pymc.Client('localhost:11211')
+mc.set('foo', 'bar')
+assert mc.get('foo') == 'bar', 'memcached not found'
 
 kt = KyotoTycoon()
 kt.open(host='localhost', port=1978)
@@ -72,14 +78,21 @@ class StaleConnection(object):
         """
 
 
-#TODO: clear out old connections somehow
 open_polls = {}
 stale_poll_queue = deque()
 class PollHandler(SnoozeAuthHandler):
     @tornado.web.asynchronous
     @tornado.web.authenticated
-    def get(self):
+    def post(self):
         user_email = self.get_current_user()
+        clients_user_state = self.request.body
+        existing_user_state = mc.get(user_email)
+        if existing_user_state and clients_user_state != existing_user_state:
+            self.write(existing_user_state)
+            self.finish()
+            return
+        
+        #otherwise, wait for state change
         if user_email not in open_polls:
             open_polls[user_email] = []
         open_polls[user_email].append(self)
@@ -87,21 +100,28 @@ class PollHandler(SnoozeAuthHandler):
         stale_poll_queue.append(stale_connection)
 
 
-class BingHandler(SnoozeAuthHandler):
-    def get(self):
+class NotifyHandler(SnoozeAuthHandler):
+    def post(self):
         now = time.time()
         while len(stale_poll_queue) > 0 and stale_poll_queue[0].expiration_time <= now:
             stale_poll_queue.popleft().cleanup()
 
-        self.write("huh")
         user_email = self.get_current_user()
+        new_user_state = self.request.body
+        existing_user_state = mc.get(user_email)
+        if new_user_state == existing_user_state:
+            print 'no state change, doing nothing'
+            return
+        mc.set(user_email, new_user_state)
+
+        #self.write('huh')
         users_polls = open_polls.get(user_email)
         if not users_polls:
             return
         for poll in users_polls:
             #TODO: write the full state and timestamp, not just a diff
             if not poll.request.connection.stream.closed():
-                poll.write({"BONG":True})
+                poll.write(new_user_state)
                 poll.finish()
         del open_polls[user_email]
 
@@ -112,7 +132,7 @@ class Application(tornado.web.Application):
             (r"/login", GoogleHandler),
             (r"/api/get_songs", GetSongsHandler),
             (r"/api/get_rdio_playback_token", GetRdioPlaybackToken),
-            (r"/api/bing", BingHandler),
+            (r"/api/notify", NotifyHandler),
             (r"/api/poll", PollHandler),
         ]
 

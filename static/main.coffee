@@ -35,16 +35,31 @@ register_click_events = ->
             get_music_player().play(res[0])
         )
     $('button#bing').click ->
-        $.getJSON(API_ROOT + '/bing')
+        $.ajax(API_ROOT + '/notify',
+            type: 'POST',
+            data: String(Math.ceil(Math.random() * 10)),
+        )
+
+user_data =
+    is: 'blah'
 
 poll_loop = ->
     console.log 'polling now'
     $.ajax(API_ROOT + '/poll',
-        complete: (res) ->
-            poll_loop()
+        type: 'POST'
+        data: user_data.is
+        success: (res) ->
+            user_data.is = res
+            console.log "GOT STATE", user_data.is
+            setTimeout(->
+                poll_loop()
+            , 1000)
         error: (res) ->
-            poll_loop()
-        timeout:60000
+            console.log "error, waiting 1 second"
+            setTimeout(->
+                poll_loop()
+            , 1000)
+        timeout: 60000
     )
 
 $( ->
