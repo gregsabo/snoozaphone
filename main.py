@@ -65,8 +65,11 @@ class StaleConnection(object):
         user_poll_list = open_polls.get(self.user_email)
         if user_poll_list and self.connection in user_poll_list:
             user_poll_list.remove(self.connection)
-        self.connection.write("TERMINATED")
-        self.connection.finish()
+        """
+        if not self.connection.request.connection.stream.closed():
+            self.connection.write("TERMINATED")
+            self.connection.finish()
+        """
 
 
 #TODO: clear out old connections somehow
@@ -82,23 +85,25 @@ class PollHandler(SnoozeAuthHandler):
         open_polls[user_email].append(self)
         stale_connection = StaleConnection(self, user_email)
         stale_poll_queue.append(stale_connection)
-        print "POLLED:", open_polls
-        print 'QUEUE:', stale_poll_queue
 
 
 class BingHandler(SnoozeAuthHandler):
     def get(self):
+        now = time.time()
+        while len(stale_poll_queue) > 0 and stale_poll_queue[0].expiration_time <= now:
+            stale_poll_queue.popleft().cleanup()
+
+        self.write("huh")
         user_email = self.get_current_user()
-        users_polls = open_polls[user_email]
+        users_polls = open_polls.get(user_email)
+        if not users_polls:
+            return
         for poll in users_polls:
             #TODO: write the full state and timestamp, not just a diff
             if not poll.request.connection.stream.closed():
                 poll.write({"BONG":True})
                 poll.finish()
         del open_polls[user_email]
-        now = time.time()
-        while len(stale_poll_queue) > 0 and stale_poll_queue[0].expiration_time <= now:
-            stale_poll_queue.popleft().cleanup()
 
 class Application(tornado.web.Application):
     def __init__(self):
