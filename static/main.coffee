@@ -15,15 +15,12 @@ class RdioMusicPlayer extends MusicPlayer
     play: (foreign_id) ->
         console.log 'waiting to play'
         $('#rdio-player').bind 'ready.rdio', (event, userInfo) ->
-            console.log 'ready, trying to play now'
-            console.log 'checking', $("#rdio-player")
             $('#rdio-player').rdio().play(foreign_id.split(":")[2])
 
 music_player = null
 get_music_player = ->
     if not music_player
         music_player = new RdioMusicPlayer()
-    console.log "got music player", music_player
     return music_player
 
 auth_check = (res) ->
@@ -37,6 +34,9 @@ register_click_events = ->
             auth_check(res)
             get_music_player().play(res[0])
         )
+    $('button#bing').click ->
+        $.getJSON(API_ROOT + '/bing')
+
 $( ->
     register_click_events()
     console.log "Hello World!"

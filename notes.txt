@@ -13,7 +13,7 @@ API:
 (static page)
 DONE "HELLO WORLD" in html
 DONE login
-dummy get songs call
-rdio oauth
+#dummy get songs call
+#rdio oauth
 get songs for user
 playback
