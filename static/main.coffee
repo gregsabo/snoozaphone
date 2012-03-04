@@ -1,4 +1,6 @@
 API_ROOT = '/api'
+client_id = Math.ceil(Math.random() * 10000000000000000)
+console.log 'using client id', client_id
 
 class MusicPlayer
     play: (foreign_id) ->
@@ -63,6 +65,7 @@ poll_loop = ->
     )
 
 $( ->
+    console.log 'backbone?', Backbone
     register_click_events()
     console.log "Hello World!"
     poll_loop()

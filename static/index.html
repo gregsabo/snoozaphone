@@ -1,19 +1,55 @@
 <head>
+    <script src="/static/json2.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <script src="/static/underscore-min.js"></script>
+    <script src="/static/backbone-min.js"></script>
     <script src="/static/jquery.rdio.min.js" type="text/javascript"></script>
     <script src='/static/main.js' type='text/javascript'></script>
     <script src='/static/token.js' type='text/javascript'></script>
+    <link rel="stylesheet" type="text/css" href="/static/style.css" />
 </head>
 <body>
-    <h1>HI</h1>
-    <div id='rdio-player'></div>
-    <button id='get-songs'>Get Songs</button><br/>
-    <button id='play'>Play</button>
-    <button id='stop'>Stop</button>
-    <button id='skip'>Skip</button>
-    <br />
-    <button id='vol-up'>+</button>
-    <button id='vol-down'>-</button>
-    <br />
-    <button id='bing'>bing</button>
+    <!-- front-panel displays playback controls and lifts up -->
+    <div id='front-panel'>
+        <h1>Snoozaphone</h1>
+        <div id='rdio-player'></div>
+        <button id='get-songs'>Get Songs</button><br/>
+        <button id='play'>Play</button>
+        <button id='stop'>Stop</button>
+        <button id='skip'>Skip</button>
+        <br />
+        <button id='vol-up'>+</button>
+        <button id='vol-down'>-</button>
+        <br />
+        <button id='bing'>bing</button><br />
+    </div>
+    <!-- back-panel displays persistent config and is behind -->
+    <div id='back-panel'>
+        <div id='widgets'>
+            <div class='widget' id='sunday-alarm'>
+                <label>Sunday Alarm Time</label><input type="text" pattern="[0-9]*" />
+            </div>
+            <div class='widget' id='weekday-alarm'>
+                <label>Weekday Alarm Time</label><input type="text" pattern="[0-9]*" />
+            </div>
+            <div class='widget' id='saturday-alarm'>
+                <label>Saturday Alarm Time</label><input type="text" pattern="[0-9]*" />
+            </div>
+        </div>
+    </div>
+    <!-- invisible -->
+    <div id='dummmy-panel'>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+    </div>
 </body>
