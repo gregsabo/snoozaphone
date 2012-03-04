@@ -37,7 +37,14 @@ register_click_events = ->
     $('button#bing').click ->
         $.getJSON(API_ROOT + '/bing')
 
+pool_loop = ->
+    $.getJSON(API_ROOT + '/poll', (res) ->
+        console.log "BONG"
+        pool_loop()
+    )
+
 $( ->
     register_click_events()
     console.log "Hello World!"
+    pool_loop()
 )

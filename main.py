@@ -76,7 +76,7 @@ class PollHandler(SnoozeAuthHandler):
     @tornado.web.asynchronous
     @tornado.web.authenticated
     def get(self):
-        user_email = self.get_current_user()['email']
+        user_email = self.get_current_user()
         if user_email not in open_polls:
             open_polls[user_email] = []
         open_polls[user_email].append(self)
@@ -86,14 +86,15 @@ class PollHandler(SnoozeAuthHandler):
         print 'QUEUE:', stale_poll_queue
 
 
-class SkipHandler(SnoozeAuthHandler):
+class BingHandler(SnoozeAuthHandler):
     def get(self):
-        user_email = self.get_current_user()['email']
+        user_email = self.get_current_user()
         users_polls = open_polls[user_email]
         for poll in users_polls:
             #TODO: write the full state and timestamp, not just a diff
-            poll.write({"skipped":True})
-            poll.finish()
+            if not poll.request.connection.stream.closed():
+                poll.write({"BONG":True})
+                poll.finish()
         del open_polls[user_email]
         now = time.time()
         while len(stale_poll_queue) > 0 and stale_poll_queue[0].expiration_time <= now:
@@ -106,6 +107,8 @@ class Application(tornado.web.Application):
             (r"/login", GoogleHandler),
             (r"/api/get_songs", GetSongsHandler),
             (r"/api/get_rdio_playback_token", GetRdioPlaybackToken),
+            (r"/api/bing", BingHandler),
+            (r"/api/poll", PollHandler),
         ]
 
         settings = {
