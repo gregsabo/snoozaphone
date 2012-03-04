@@ -85,8 +85,8 @@ class PollHandler(SnoozeAuthHandler):
     @tornado.web.authenticated
     def post(self):
         user_email = self.get_current_user()
-        clients_user_state = self.request.body
         existing_user_state = mc.get(user_email)
+        clients_user_state = self.request.body
         if existing_user_state and clients_user_state != existing_user_state:
             self.write(existing_user_state)
             self.finish()
