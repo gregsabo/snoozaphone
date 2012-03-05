@@ -1,6 +1,5 @@
 API_ROOT = '/api'
 client_id = Math.ceil(Math.random() * 10000000000000000)
-console.log 'using client id', client_id
 
 class MusicPlayer
     play: (foreign_id) ->
@@ -29,25 +28,6 @@ auth_check = (res) ->
     if res.user_not_found
         window.location.href = '/login'
 
-poll_loop = ->
-    full_state = JSON.stringify(get_full_state())
-    console.log 'polling with', full_state
-    $.ajax(API_ROOT + '/poll',
-        type: 'POST'
-        data: full_state
-        success: (res) ->
-            console.log 'pulling iwth', res
-            implement_state_change($.parseJSON(res))
-            setTimeout(->
-                poll_loop()
-            , 1000)
-        error: (res) ->
-            console.log "error, waiting 1 second"
-            setTimeout(->
-                poll_loop()
-            , 1000)
-        timeout: 60000
-    )
 
 register_click_events = ->
     $('button#get-songs').click ->
@@ -66,6 +46,7 @@ register_click_events = ->
 class AlarmView extends Backbone.View
     initialize: (options) ->
         @setElement($(options.selector))
+        @model = options.model
         @render()
         return this
 
@@ -76,50 +57,90 @@ class AlarmView extends Backbone.View
         newval = @$('input').val()
         @model.set('time', newval)
 
-    render: ->
-        @$el.append("!")
+    render: =>
+        console.log 'rendering!', @model
+        time_string = @model.get('time')
+        if time_string and time_string.indexOf(':') is -1
+            time_string = time_string.slice(0, -2) + ':' + time_string.slice(-2)
+        @$('input').val(time_string)
 
 
 class AlarmModel extends Backbone.Model
     defaults:
         time: null
 
+    validate: (attributes) ->
+        if attributes?.time
+            num_string = attributes.time.replace(/\:/g,"")
+            num = parseInt(num_string)
+            console.log 'validating', num
+            if num < 100 or num > 1259
+                return false
+            minutes = num - (Math.floor(num/100) * 100)
+            console.log 'checking min', minutes
+            if minutes > 59
+                return false
+        return null
 
-model_map = {}
-prepare = ->
-    model_map.sunday_alarm = new AlarmModel()
-    model_map.weekday_alarm = new AlarmModel()
-    model_map.satuday_alarm = new AlarmModel()
 
-    for key, model of model_map
-        model.on('change', push_state_change)
+class StateManager
+    constructor: ->
+        @last_state = null
+        @model_map = {}
+        @hook_up('sunday_alarm', AlarmModel, AlarmView)
+        @hook_up('weekday_alarm', AlarmModel, AlarmView)
+        @hook_up('saturday_alarm', AlarmModel, AlarmView)
 
-    new AlarmView({selector:'#sunday-alarm', model:model_map.sunday_alarm})
-    new AlarmView({selector:'#weekday-alarm', model:model_map.weekday_alarm})
-    new AlarmView({selector:'#saturday-alarm', model:model_map.saturday_alarm})
+    hook_up: (key, model_class, view_class) ->
+        model = new model_class()
+        view = new view_class({selector:'#'+key, model:model})
+        model.on('change', @push_state_change)
+        model.on('change', view.render)
+        @model_map[key] = model
 
-get_full_state = () ->
-    full_state = {}
-    for key, model of model_map
-        full_state[key] = model.toJSON()
-    return full_state
+    get_full_state: ->
+        full_state = {}
+        for key, model of @model_map
+            full_state[key] = model.toJSON()
+        return full_state
 
-push_state_change = ->
-    full_state = get_full_state()
-    $.ajax(API_ROOT + '/notify',
-        type: 'POST'
-        data: JSON.stringify(full_state)
-    )
+    push_state_change: =>
+        full_state = @get_full_state()
+        $.ajax(API_ROOT + '/notify',
+            type: 'POST'
+            data: JSON.stringify(full_state)
+        )
 
-implement_state_change = (full_state) ->
-    console.log 'pulling:', full_state
-    for key, attributes of full_state
-        model_map[key].set(attributes)
+    implement_state_change: (full_state) ->
+        console.log 'pulling:', full_state
+        for key, attributes of full_state
+            @model_map[key].set(attributes)
+
+    poll_loop: ->
+        full_state = JSON.stringify(@get_full_state())
+        console.log 'polling with', full_state
+        $.ajax(API_ROOT + '/poll',
+            type: 'POST'
+            data: full_state
+            success: (res) =>
+                console.log 'pulling with', res
+                if res isnt @last_state
+                    @implement_state_change($.parseJSON(res))
+                    @last_state = res
+                setTimeout(=>
+                    @poll_loop()
+                , 1000)
+            error: (res) =>
+                console.log "error, waiting 1 second"
+                setTimeout(=>
+                    @poll_loop()
+                , 1000)
+            timeout: 60000
+        )
 
 
 $( ->
-    prepare()
-    register_click_events()
-    console.log "Hello World!"
-    poll_loop()
+    state_manager = new StateManager()
+    state_manager.poll_loop()
+    paper = Raphael("backdrop", window.width, window.height)
 )

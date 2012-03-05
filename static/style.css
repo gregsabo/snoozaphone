@@ -3,19 +3,32 @@ body {
     margin: 0;
     padding: 0;
     border: 0;
+    font-family: Helvetica;
 }
 
 div#front-panel {
+    position: relative;
     background:white;
-    z-index:1;
     height: 100%;
     text-align: center;
-    margin-bottom: 300px;
+    margin-bottom: 900px;
+    color: white;
+}
+
+div#front-panel div#controls {
+    z-index:1;
+    position: absolute;
+    top: 30%;
+    width: 100%;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 
 div#back-panel {
-    background:blue;
+    background:#222;
+    color: white;
     height: 100%;
     position: fixed;
     top:0px;
@@ -29,6 +42,25 @@ div#back-panel #widgets {
     left: 0;
 }
 
-div#front-panel h1 {
-    padding-top: 20%;
+
+div#backdrop {
+    //background: black;
+    height: 100%;
+    top: 0px;
+    width: 100%;
+    position: absolute;
+    z-index: 0;
+    background-image: linear-gradient(bottom, rgb(20,27,46) 0%, rgb(5,5,5) 74%);
+    background-image: -o-linear-gradient(bottom, rgb(20,27,46) 0%, rgb(5,5,5) 74%);
+    background-image: -moz-linear-gradient(bottom, rgb(20,27,46) 0%, rgb(5,5,5) 74%);
+    background-image: -webkit-linear-gradient(bottom, rgb(20,27,46) 0%, rgb(5,5,5) 74%);
+    background-image: -ms-linear-gradient(bottom, rgb(20,27,46) 0%, rgb(5,5,5) 74%);
+
+    background-image: -webkit-gradient(
+	linear,
+	left bottom,
+	left top,
+	color-stop(0, rgb(20,27,46)),
+	color-stop(0.74, rgb(5,5,5))
+    );
 }

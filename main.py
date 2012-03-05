@@ -119,7 +119,6 @@ class NotifyHandler(SnoozeAuthHandler):
         if not users_polls:
             return
         for poll in users_polls:
-            #TODO: write the full state and timestamp, not just a diff
             if not poll.request.connection.stream.closed():
                 poll.write(new_user_state)
                 poll.finish()
